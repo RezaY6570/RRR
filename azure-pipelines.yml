@@ -4,16 +4,39 @@
 # https://aka.ms/yaml
 
 trigger:
-- main
+- main  # شاخه‌ای که باعث اجرای پایپلاین می‌شود (می‌توانید به شاخه خود تغییر دهید)
 
 pool:
-  name: default
+  vmImage: 'windows-latest'  # استفاده از یک تصویر ویندوزی برای ساخت پروژه
+
+variables:
+  buildConfiguration: 'Release'  # تنظیم پیکربندی بیلد
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: UseDotNet@2  # نصب نسخه مورد نیاز از SDK دات‌نت
+  inputs:
+    packageType: 'sdk'
+    version: '7.x'  # نسخه SDK مورد نیاز (مانند 6.x یا 7.x)
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: DotNetCoreCLI@2  # بازیابی بسته‌های NuGet
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2  # بیلد پروژه
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2  # انتشار پروژه
+  inputs:
+    command: 'publish'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1  # ذخیره خروجی بیلد
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
