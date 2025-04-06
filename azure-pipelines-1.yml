@@ -1,0 +1,42 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main  # شاخه‌ای که باعث اجرای پایپلاین می‌شود (می‌توانید به شاخه خود تغییر دهید)
+
+pool:
+  vmImage: 'windows-latest'  # استفاده از یک تصویر ویندوزی برای ساخت پروژه
+
+variables:
+  buildConfiguration: 'Release'  # تنظیم پیکربندی بیلد
+
+steps:
+- task: UseDotNet@2  # نصب نسخه مورد نیاز از SDK دات‌نت
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'  # نسخه SDK مورد نیاز 
+
+- task: DotNetCoreCLI@2  # بازیابی بسته‌های NuGet
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2  # بیلد پروژه
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2  # انتشار پروژه
+  inputs:
+    command: 'publish'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1  # ذخیره خروجی بیلد
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
